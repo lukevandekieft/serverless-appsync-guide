@@ -1,0 +1,119 @@
+UserPool:
+  Type: "AWS::Cognito::UserPool"
+  Properties:
+    UserPoolName: ${self:custom.base}-userpool
+    UsernameAttributes:
+      - email
+    Schema:
+      - Name: name
+        AttributeDataType: String
+        Mutable: true
+        Required: false
+      - Name: nickname
+        AttributeDataType: String
+        Mutable: true
+        Required: false
+
+UserPoolClient:
+  Type: "AWS::Cognito::UserPoolClient"
+  Properties:
+    ClientName: ${self:custom.base}-client
+    GenerateSecret: false
+    UserPoolId:
+      Ref: UserPool
+
+IdentityPool:
+  Type: "AWS::Cognito::IdentityPool"
+  Properties:
+    IdentityPoolName: serverlessappsyncbackend${self:provider.stage}identity
+    AllowUnauthenticatedIdentities: true
+    CognitoIdentityProviders:
+      - ClientId:
+          Ref: UserPoolClient
+        ProviderName:
+          Fn::GetAtt:
+            - UserPool
+            - ProviderName
+
+CognitoUnAuthorizedRole:
+  Type: "AWS::IAM::Role"
+  Properties:
+    RoleName: ${self:custom.role.cognito.unAuth.name}
+    AssumeRolePolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: "Allow"
+          Principal:
+            Federated: "cognito-identity.amazonaws.com"
+          Action:
+            - "sts:AssumeRoleWithWebIdentity"
+          Condition:
+            StringEquals:
+              "cognito-identity.amazonaws.com:aud":
+                Ref: IdentityPool
+    Policies:
+      - PolicyName: ${self:custom.role.cognito.unAuth.name}-Policy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "mobileanalytics:PutEvents"
+                - "cognito-sync:*"
+              Resource: "*"
+            - Effect: "Allow"
+              Action:
+                - appsync:GraphQL
+              Resource:
+                - arn:aws:appsync:${self:provider.region}:${self:custom.account.id}:apis/*/types/Query/fields/ListNotes
+                - arn:aws:appsync:${self:provider.region}:${self:custom.account.id}:apis/*/types/Mutation/fields/createNote
+                - arn:aws:appsync:${self:provider.region}:${self:custom.account.id}:apis/*/types/Mutation/fields/deleteNote
+                - arn:aws:appsync:${self:provider.region}:${self:custom.account.id}:apis/*/types/Query/fields/getNote
+
+CognitoAuthorizedRole:
+  Type: "AWS::IAM::Role"
+  Properties:
+    RoleName: ${self:custom.role.cognito.auth.name}
+    AssumeRolePolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: "Allow"
+          Principal:
+            Federated: "cognito-identity.amazonaws.com"
+          Action:
+            - "sts:AssumeRoleWithWebIdentity"
+          Condition:
+            StringEquals:
+              "cognito-identity.amazonaws.com:aud":
+                Ref: IdentityPool
+    Policies:
+      - PolicyName: ${self:custom.role.cognito.auth.name}-Policy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "mobileanalytics:PutEvents"
+                - "cognito-sync:*"
+                - "cognito-identity:*"
+              Resource: "*"
+            - Effect: "Allow"
+              Action:
+                - appsync:GraphQL
+              Resource:
+                - arn:aws:appsync:${self:provider.region}:${self:custom.account.id}:apis/*/*
+
+IdentityPoolRoleMapping:
+  Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+  Properties:
+    IdentityPoolId:
+      Ref: IdentityPool
+    Roles:
+      authenticated:
+        Fn::GetAtt:
+          - CognitoAuthorizedRole
+          - Arn
+      unauthenticated:
+        Fn::GetAtt:
+          - CognitoUnAuthorizedRole
+          - Arn

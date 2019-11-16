@@ -1,0 +1,37 @@
+type Schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  batchGetNotes(id: [String]): [Note]
+  getNote(id: String!): Note
+}
+
+type Mutation {
+  createNote(input: CreateNoteInput!): Note
+  deleteNote(input: DeleteNoteInput!): Note
+  updateNote(input: UpdateNoteInput!): Note
+}
+
+type Note {
+  id: String!
+  title: String
+  content: String
+}
+
+input CreateNoteInput {
+	id: String!
+  title: String
+  content: String
+}
+
+input DeleteNoteInput {
+	id: String!
+}
+
+input UpdateNoteInput {
+	id: String!
+  title: String
+  content: String
+}

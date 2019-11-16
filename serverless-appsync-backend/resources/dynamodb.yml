@@ -1,0 +1,50 @@
+NoteTable:
+  Type: 'AWS::DynamoDB::Table'
+  Properties:
+    KeySchema:
+      -
+        AttributeName: id
+        KeyType: HASH
+    AttributeDefinitions:
+      -
+        AttributeName: id
+        AttributeType: S
+    ProvisionedThroughput:
+      ReadCapacityUnits: 1
+      WriteCapacityUnits: 1
+    TableName: ${self:custom.db.table.note.name}
+
+AppSyncDynamoDBServiceRole:
+  Type: "AWS::IAM::Role"
+  Properties:
+    RoleName: ${self:custom.role.dynamodb.name}
+    AssumeRolePolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        -
+          Effect: "Allow"
+          Principal:
+            Service:
+              - "appsync.amazonaws.com"
+          Action:
+            - "sts:AssumeRole"
+    Policies:
+      -
+        PolicyName: ${self:custom.role.dynamodb.name}-Policy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Action:
+                - "dynamodb:Query"
+                - "dynamodb:BatchWriteItem"
+                - "dynamodb:GetItem"
+                - "dynamodb:DeleteItem"
+                - "dynamodb:PutItem"
+                - "dynamodb:Scan"
+                - "dynamodb:UpdateItem"
+                - "dynamodb:BatchGetItem"
+              Resource:
+                - "arn:aws:dynamodb:${self:provider.region}:${self:custom.account.id}:table/${self:custom.db.table.note.name}"
+                - "arn:aws:dynamodb:${self:provider.region}:${self:custom.account.id}:table/${self:custom.db.table.note.name}/*"

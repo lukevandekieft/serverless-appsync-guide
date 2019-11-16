@@ -1,0 +1,15 @@
+{
+  "default": {
+    "timeout": 120
+  },
+  "account": {
+    "id": "400887732624"
+  },
+  "db": {
+    "table": {
+      "note": {
+        "name": "${self:custom.base}-notes"
+      }
+    }
+  }
+}

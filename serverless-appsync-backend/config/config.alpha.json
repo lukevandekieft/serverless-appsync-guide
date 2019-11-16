@@ -1,0 +1,18 @@
+{
+  "default": {
+    "timeout": 120
+  },
+  "account": {
+    "id": "400887732624"
+  },
+  "appsync": {
+    "name": "${self:custom.base}-api"
+  },
+  "db": {
+    "table": {
+      "note": {
+        "name": "${self:custom.base}-notes"
+      }
+    }
+  }
+}
